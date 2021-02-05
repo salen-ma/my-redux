@@ -3,7 +3,20 @@
  * { getState, dispatch, subscribe }
  */
 
-function createStore(reducer, preloadedState) {
+function createStore(reducer, preloadedState, enhancer) {
+  if (typeof reducer !== 'function') {
+    throw new Error('reducer 必须是函数')
+  }
+
+  // 判断 enhancer 有没有传参
+  if (typeof enhancer !== 'undefined') {
+    // 判断 enhancer 是不是函数
+    if (typeof enhancer !== 'function') {
+      throw new Error('enhancer 必须是函数')
+    }
+    return enhancer(createStore)(reducer, preloadedState)
+  }
+
   // store 中存储的状态
   var currentState = preloadedState
   // 存放订阅函数
@@ -15,6 +28,15 @@ function createStore(reducer, preloadedState) {
   }
   // 触发 action
   function dispatch (action) {
+    // 判断 actions 是否是对象
+    if (!isPlainObject(action)) {
+      throw new Error('action 必须是对象')
+    }
+    // 判断 actions 是否有 type 属性
+    if (typeof action.type === 'undefined') {
+      throw new Error('action 中必须要有 type 属性')
+    }
+
     currentState = reducer(currentState, action)
     // 调用订阅者
     for (var i = 0; i < currentListeners.length; i++) {
@@ -26,7 +48,19 @@ function createStore(reducer, preloadedState) {
   function subscribe (listener) {
     currentListeners.push(listener)
   }
-  
+
+  function isPlainObject (obj) {
+    if (typeof obj !== 'object' || obj === null) {
+      return false
+    }
+    // 区分数组和对象，原型对象对比
+    var proto = obj
+    while (Object.getPrototypeOf(proto) !== null) {
+      proto = Object.getPrototypeOf(proto)
+    }
+    return Object.getPrototypeOf(obj) === proto
+  }
+
   return {
     getState,
     dispatch,

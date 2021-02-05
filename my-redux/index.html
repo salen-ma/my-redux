@@ -11,6 +11,24 @@
     <button id="decrement">-1</button>
     <script src="./index.js"></script>
     <script>
+      // 增强 dispatch
+      function enhancer (createStore) {
+        return function (reducer, preloadedState) {
+          var store = createStore(reducer, preloadedState)
+          var dispatch = store.dispatch
+          function _dispatch (action) {
+            if (typeof action === 'function') {
+              return action(dispatch)
+            }
+            dispatch(action)
+          }
+          return {
+            ...store,
+            dispatch: _dispatch
+          }
+        }
+      }
+
       function reducer(state, action) {
         switch (action.type) {
           case "increment":
@@ -22,14 +40,20 @@
         }
       }
       
-      var store = createStore(reducer, 0)
+      var store = createStore(reducer, 0, enhancer)
+      console.log(store)
 
       store.subscribe(function () {
         document.getElementById("box").innerHTML = store.getState()
       })
       
       document.getElementById("increment").onclick = function () {
-        store.dispatch({ type: "increment" })
+        // store.dispatch({ type: "increment" })
+        store.dispatch(function (dispatch) {
+          setTimeout(function () {
+            dispatch({ type: 'increment' })
+          }, 3000)
+        })
       }
 
       document.getElementById("decrement").onclick = function () {
