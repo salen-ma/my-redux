@@ -49,21 +49,50 @@ function createStore(reducer, preloadedState, enhancer) {
     currentListeners.push(listener)
   }
 
-  function isPlainObject (obj) {
-    if (typeof obj !== 'object' || obj === null) {
-      return false
-    }
-    // 区分数组和对象，原型对象对比
-    var proto = obj
-    while (Object.getPrototypeOf(proto) !== null) {
-      proto = Object.getPrototypeOf(proto)
-    }
-    return Object.getPrototypeOf(obj) === proto
-  }
-
   return {
     getState,
     dispatch,
     subscribe
+  }
+}
+
+function isPlainObject (obj) {
+  if (typeof obj !== 'object' || obj === null) {
+    return false
+  }
+  // 区分数组和对象，原型对象对比
+  var proto = obj
+  while (Object.getPrototypeOf(proto) !== null) {
+    proto = Object.getPrototypeOf(proto)
+  }
+  return Object.getPrototypeOf(obj) === proto
+}
+
+function applyMiddleware (...middlewares) {
+  return function (createStore) {
+    return function (reducer, preloadedState) {
+      // 创建 store
+      var store = createStore(reducer, preloadedState)
+      var middlewareAPI = {
+        getState: store.getState,
+        dispatch: store.dispatch
+      }
+      var chain = middlewares.map(middleware => middleware(middlewareAPI))
+      var dispatch = compose(...chain)(store.dispatch)
+      return {
+        ...store,
+        dispatch
+      }
+    }
+  }
+}
+
+function compose () {
+  var funcs = [...arguments]
+  return function (dispatch) {
+    for (var i = funcs.length - 1; i >= 0; i--) {
+      dispatch = funcs[i](dispatch)
+    }
+    return dispatch
   }
 }
