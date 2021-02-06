@@ -96,3 +96,34 @@ function compose () {
     return dispatch
   }
 }
+
+function bindActionCreators (actionCreators, dispatch) {
+  var boundActionCreators = {}
+  for (var key in actionCreators) {
+    (function (key) {
+      boundActionCreators[key] = function () {
+        dispatch(actionCreators[key]())
+      }
+    })(key)
+  }
+  return boundActionCreators
+}
+
+function combineReducers (reducers) {
+  var reducerKeys = Object.keys(reducers)
+  for (var i = 0; i < reducerKeys.length; i++) {
+    var key = reducerKeys[i]
+    if (typeof reducers[key] !== 'function') {
+      throw new Error('reducer 必须是函数')
+    }
+  }
+  return function (state, action) {
+    var nextState = {}
+    for (var i = 0; i < reducerKeys.length; i++) {
+      var key = reducerKeys[i]
+      var reducer = reducers[key]
+      nextState[key] = reducer(state[key], action)
+    }
+    return nextState
+  }
+}
